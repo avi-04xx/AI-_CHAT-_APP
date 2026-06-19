@@ -26,14 +26,12 @@ export function clearAuthCookie(res) {
 export function requireAuth(req, res, next) {
   try {
     const token = req.cookies?.[COOKIE_NAME];
-    if (!token) {
-      return res.status(401).json({ error: "Not logged in" });
-    }
+    if (!token) return res.status(401).json({ error: "Not logged in" });
 
     const decoded = jwt.verify(token, getJwtSecret());
     req.user = decoded;
     return next();
-  } catch (err) {
+  } catch {
     return res.status(401).json({ error: "Invalid session" });
   }
 }
