@@ -3,10 +3,13 @@ import md5 from "blueimp-md5";
 
 const API_URL = "https://ai-chat-app-1x12.onrender.com";
 
-async function apiFetch(path, options) {
-  const res = await fetch(API_URL + path, { 
-    credentials: "include", 
-    ...options 
+async function apiFetch(path, options = {}) {
+  const res = await fetch(API_URL + path, {
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    ...options,
   });
   const data = await res.json().catch(() => ({}));
   return { res, data };
@@ -36,14 +39,13 @@ function AuthCard({ mode, setMode, onAuthed }) {
 
       const { res, data } = await apiFetch(path, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
       });
 
-      if (!res.ok) throw new Error(data?.error || "Auth failed");
+      if (!res.ok) throw new Error(data?.error || "Authentication failed");
       onAuthed(data.user);
     } catch (err) {
-      setError(err?.message || "Auth failed");
+      setError(err?.message || "Something went wrong");
     } finally {
       setLoading(false);
     }
@@ -117,15 +119,15 @@ function AuthCard({ mode, setMode, onAuthed }) {
 function Bubble({ role, content, avatarUrl }) {
   const isUser = role === "user";
   return (
-    <div className={"row " + (isUser ? "row-user" : "row-ai")}>
-      <div className={"bubble-wrap " + (isUser ? "bubble-wrap-user" : "bubble-wrap-ai")}>
+    <div className={`row ${isUser ? "row-user" : "row-ai"}`}>
+      <div className={`bubble-wrap ${isUser ? "bubble-wrap-user" : "bubble-wrap-ai"}`}>
         <img
-          className={"avatar " + (isUser ? "avatar-user" : "avatar-ai")}
+          className={`avatar ${isUser ? "avatar-user" : "avatar-ai"}`}
           src={avatarUrl}
           alt={isUser ? "Your avatar" : "AI avatar"}
           loading="lazy"
         />
-        <div className={"bubble " + (isUser ? "bubble-user" : "bubble-ai")}>
+        <div className={`bubble ${isUser ? "bubble-user" : "bubble-ai"}`}>
           <div className="meta">{isUser ? "You" : "AI"}</div>
           <div className="text">{content}</div>
         </div>
@@ -149,7 +151,7 @@ export default function App() {
       try {
         const { res, data } = await apiFetch("/api/auth/me");
         if (res.ok && data?.user) setUser(data.user);
-      } catch {}
+      } catch (e) {}
     }
     loadMe();
   }, []);
@@ -159,32 +161,29 @@ export default function App() {
   }, [user]);
 
   useEffect(() => {
-    if (!listRef.current) return;
-    listRef.current.scrollTop = listRef.current.scrollHeight;
+    listRef.current?.scrollTo(0, listRef.current.scrollHeight);
   }, [messages, loading]);
 
   async function send() {
     const text = input.trim();
-    if (!text || loading) return;
+    if (!text || loading || !user) return;
 
     setInput("");
     setLoading(true);
     setMessages((prev) => [...prev, { role: "user", content: text }]);
 
     try {
-      const history = messages.map((m) => ({ role: m.role, content: m.content }));
       const { res, data } = await apiFetch("/api/chat", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: text, history })
+        body: JSON.stringify({ message: text, history: messages }),
       });
 
-      if (!res.ok) throw new Error(data?.error || "Request failed");
+      if (!res.ok) throw new Error(data?.error || "Failed to get response");
       setMessages((prev) => [...prev, { role: "assistant", content: data.reply }]);
     } catch (err) {
       setMessages((prev) => [
         ...prev,
-        { role: "assistant", content: "Error: " + (err?.message || "Cannot connect to server") }
+        { role: "assistant", content: "Error: " + (err.message || "Cannot connect to server") }
       ]);
     } finally {
       setLoading(false);
@@ -205,7 +204,7 @@ export default function App() {
     setAuthMode("login");
   }
 
-  const userAvatar = user?.email ? gravatarUrl(user.email, 64) : "";
+  const userAvatar = user?.email ? gravatarUrl(user.email) : "";
   const aiAvatar = "https://www.gravatar.com/avatar/?d=mp&s=64";
 
   return (
@@ -215,26 +214,20 @@ export default function App() {
           <div className="title">AI Chat App</div>
           <div className="subtitle">Ask anything and get instant answers.</div>
         </div>
-        <div className="top-actions">
-          {user && (
-            <>
-              <div className="whoami" title={user.email}>
-                <img className="whoami-avatar" src={userAvatar} alt="Avatar" loading="lazy" />
-                <div className="whoami-text">{user.name}</div>
-              </div>
-              <button className="btn btn-secondary" onClick={() => setMessages([])} disabled={loading}>
-                Clear
-              </button>
-              <button className="btn btn-secondary" onClick={logout} disabled={loading}>
-                Logout
-              </button>
-            </>
-          )}
-        </div>
+        {user && (
+          <div className="top-actions">
+            <div className="whoami" title={user.email}>
+              <img className="whoami-avatar" src={userAvatar} alt="Avatar" />
+              <div className="whoami-text">{user.name}</div>
+            </div>
+            <button className="btn btn-secondary" onClick={() => setMessages([])}>Clear</button>
+            <button className="btn btn-secondary" onClick={logout}>Logout</button>
+          </div>
+        )}
       </header>
 
       {!user ? (
-        <AuthCard mode={authMode} setMode={setAuthMode} onAuthed={(u) => { setUser(u); setMessages([]); }} />
+        <AuthCard mode={authMode} setMode={setAuthMode} onAuthed={setUser} />
       ) : (
         <main className="card">
           <div className="chat-top">
@@ -247,17 +240,17 @@ export default function App() {
               <>
                 <div className="empty">Type your question and press <b>Enter</b>.</div>
                 <div className="quick-grid">
-                  {QUICK_PROMPTS.map((prompt) => (
-                    <button key={prompt} className="quick-chip" onClick={() => setInput(prompt)}>
-                      {prompt}
+                  {QUICK_PROMPTS.map((p) => (
+                    <button key={p} className="quick-chip" onClick={() => setInput(p)}>
+                      {p}
                     </button>
                   ))}
                 </div>
               </>
             ) : (
-              messages.map((m, idx) => (
+              messages.map((m, i) => (
                 <Bubble
-                  key={idx}
+                  key={i}
                   role={m.role}
                   content={m.content}
                   avatarUrl={m.role === "user" ? userAvatar : aiAvatar}
@@ -267,7 +260,7 @@ export default function App() {
             {loading && (
               <div className="row row-ai">
                 <div className="bubble-wrap bubble-wrap-ai">
-                  <img className="avatar avatar-ai" src={aiAvatar} alt="AI avatar" loading="lazy" />
+                  <img className="avatar avatar-ai" src={aiAvatar} alt="AI" />
                   <div className="bubble bubble-ai">
                     <div className="meta">AI</div>
                     <div className="text">Thinking…</div>
