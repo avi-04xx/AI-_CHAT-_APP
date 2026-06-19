@@ -66,7 +66,6 @@ async function tryCountryCapitalAnswer(query) {
       }
     }
   }
-
   return "";
 }
 
@@ -77,7 +76,6 @@ function tryMathAnswer(query) {
   if (!/^[0-9+\-*/().\s]+$/.test(expr)) return "";
 
   try {
-    // Safe because only digits/operators are allowed by regex above.
     const result = Function(`"use strict"; return (${expr});`)();
     if (Number.isFinite(result)) {
       return `The result is ${result}.`;
@@ -85,69 +83,7 @@ function tryMathAnswer(query) {
   } catch {
     return "";
   }
-
   return "";
-}
-
-async function tryDuckDuckGoAnswer(query) {
-  const url = `https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no_html=1&no_redirect=1`;
-  const res = await fetch(url);
-  if (!res.ok) return "";
-  const data = await res.json();
-
-  const abstract = cleanText(data?.AbstractText);
-  if (abstract) return abstract;
-
-  const firstTopic = data?.RelatedTopics?.find((item) => cleanText(item?.Text));
-  const topicText = cleanText(firstTopic?.Text);
-  if (topicText) return topicText;
-
-  return "";
-}
-
-async function tryWikipediaAnswer(query) {
-  const searchUrl = `https://en.wikipedia.org/w/api.php?action=opensearch&search=${encodeURIComponent(query)}&limit=1&namespace=0&format=json`;
-  const searchRes = await fetch(searchUrl);
-  if (!searchRes.ok) return "";
-
-  const searchData = await searchRes.json();
-  const title = cleanText(searchData?.[1]?.[0]);
-  if (!title) return "";
-
-  const summaryUrl = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`;
-  const summaryRes = await fetch(summaryUrl);
-  if (!summaryRes.ok) return "";
-
-  const summaryData = await summaryRes.json();
-  const extract = cleanText(summaryData?.extract);
-  if (!extract) return "";
-
-  return extract;
-}
-
-async function tryDictionaryAnswer(query) {
-  const lower = query.toLowerCase();
-  const defineMatch = lower.match(/^(define|meaning of)\s+(.+)$/);
-  if (!defineMatch) return "";
-
-  const word = cleanText(defineMatch[2]);
-  if (!word) return "";
-
-  const url = `https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`;
-  const res = await fetch(url);
-  if (!res.ok) return "";
-
-  const data = await res.json();
-  const firstMeaning = data?.[0]?.meanings?.[0];
-  const firstDefinition = firstMeaning?.definitions?.[0]?.definition;
-  const partOfSpeech = cleanText(firstMeaning?.partOfSpeech);
-  const definition = cleanText(firstDefinition);
-  if (!definition) return "";
-
-  if (partOfSpeech) {
-    return `${word} (${partOfSpeech}): ${definition}`;
-  }
-  return `${word}: ${definition}`;
 }
 
 async function tryWebAnswer(message) {
@@ -160,15 +96,6 @@ async function tryWebAnswer(message) {
 
     const mathAnswer = tryMathAnswer(query);
     if (mathAnswer) return mathAnswer;
-
-    const dictionaryAnswer = await tryDictionaryAnswer(query);
-    if (dictionaryAnswer) return dictionaryAnswer;
-
-    const wikipediaAnswer = await tryWikipediaAnswer(normalizeQuestionText(query));
-    if (wikipediaAnswer) return wikipediaAnswer;
-
-    const duckAnswer = await tryDuckDuckGoAnswer(normalizeQuestionText(query));
-    if (duckAnswer) return duckAnswer;
   } catch {
     return "";
   }
@@ -184,101 +111,77 @@ function buildOfflineReply(message) {
     return "Please type a question and I will help.";
   }
 
-  if (lower.includes("what is ai") || lower.includes("define ai")) {
-    return "AI (Artificial Intelligence) is technology that helps computers understand patterns and perform tasks like answering questions, writing text, and making predictions.";
-  }
-
-  if (lower.includes("jwt")) {
-    return "JWT (JSON Web Token) is a compact token format used for authentication and authorization. After login, the server signs a token with user data, and later verifies it to trust the user request.";
-  }
-
-  if (lower.includes("ipl") && lower.includes("team")) {
-    return "IPL teams include: Chennai Super Kings, Mumbai Indians, Royal Challengers Bengaluru, Kolkata Knight Riders, Rajasthan Royals, Sunrisers Hyderabad, Delhi Capitals, Punjab Kings, Gujarat Titans, and Lucknow Super Giants.";
+  if (lower.includes("jwt") || lower.includes("json web token")) {
+    return "JWT (JSON Web Token) is a standard way to securely transmit information between parties as a JSON object. It is commonly used for authentication and authorization in modern web apps.";
   }
 
   if (lower.includes("mern")) {
-    return "MERN is a JavaScript full-stack: MongoDB (database), Express (backend API), React (frontend UI), and Node.js (runtime).";
-  }
-
-  if (lower.includes("javascript")) {
-    return "JavaScript is a programming language used for web apps. In MERN, JavaScript runs in the browser (React) and on the server (Node.js).";
-  }
-
-  if (lower.includes("mongodb")) {
-    return "MongoDB is a NoSQL database that stores data in JSON-like documents. It is flexible, fast for app development, and commonly used with Node.js.";
+    return "MERN is a popular full-stack JavaScript technology stack: MongoDB (Database), Express (Backend), React (Frontend), Node.js (Runtime).";
   }
 
   if (lower.includes("react")) {
-    return "React is a frontend library for building UI components. It updates the screen efficiently when app state changes.";
+    return "React is a JavaScript library for building fast and interactive user interfaces. It is maintained by Meta and is very popular for single-page applications.";
   }
 
-  if (lower.includes("node")) {
-    return "Node.js lets you run JavaScript on the server. It is good for APIs, real-time apps, and full-stack JavaScript projects.";
+  if (lower.includes("node") || lower.includes("nodejs")) {
+    return "Node.js is a JavaScript runtime that allows developers to run JavaScript on the server side. It is fast, scalable, and widely used for backend development.";
+  }
+
+  if (lower.includes("mongodb")) {
+    return "MongoDB is a NoSQL database that stores data in flexible, JSON-like documents. It is popular for its scalability and ease of use with JavaScript.";
   }
 
   if (lower.includes("express")) {
-    return "Express is a lightweight Node.js framework used to build APIs and backend routes quickly.";
+    return "Express.js is a fast, minimalist web framework for Node.js used to build robust APIs and web servers.";
   }
 
-  if (lower.includes("hello") || lower.includes("hi")) {
-    return "Hello! Ask me any topic, and I will give you a clear short answer in this chat.";
+  if (lower.includes("hello") || lower.includes("hi") || lower.includes("hey")) {
+    return "Hello! How can I help you today?";
   }
 
-  return `I could not fetch a reliable live answer right now. Please rephrase your question clearly, for example: "What is the capital of India?" or "Define JWT".`;
+  if (lower.includes("how are you")) {
+    return "I'm doing great! Ready to answer your questions.";
+  }
+
+  return `I received: "${message}"\n\nTry asking clear questions like:\n• What is JWT?\n• What is MERN stack?\n• Capital of India?\n• What is React?`;
 }
 
 export async function generateAiReply({ history, message }) {
   const apiKey = getApiKey();
-  if (!apiKey) {
-    const webAnswer = await tryWebAnswer(message);
-    if (webAnswer) return webAnswer;
-    return buildOfflineReply(message);
-  }
-  const baseUrl = (process.env.AI_BASE_URL || "https://api.openai.com/v1").replace(/\/+$/, "");
-  const model = process.env.AI_MODEL || "gpt-4o-mini";
-  const url = `${baseUrl}/chat/completions`;
 
-  const body = {
-    model,
-    messages: buildMessages(history, message),
-    temperature: 0.7
-  };
+  // Try Real OpenAI API First
+  if (apiKey) {
+    const baseUrl = (process.env.AI_BASE_URL || "https://api.openai.com/v1").replace(/\/+$/, "");
+    const model = process.env.AI_MODEL || "gpt-4o-mini";
+    const url = `${baseUrl}/chat/completions`;
 
-  let response;
-  try {
-    response = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`
-      },
-      body: JSON.stringify(body)
-    });
-  } catch {
-    const webAnswer = await tryWebAnswer(message);
-    if (webAnswer) return webAnswer;
-    return buildOfflineReply(message);
-  }
+    try {
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          model,
+          messages: buildMessages(history, message),
+          temperature: 0.7
+        })
+      });
 
-  if (!response.ok) {
-    const errorText = await response.text().catch(() => "");
-    if (response.status === 401 || /invalid_api_key/i.test(errorText)) {
-      const webAnswer = await tryWebAnswer(message);
-      if (webAnswer) return webAnswer;
-      return buildOfflineReply(message);
+      if (response.ok) {
+        const data = await response.json();
+        const content = data?.choices?.[0]?.message?.content;
+        if (content) return content;
+      }
+    } catch (err) {
+      console.error("API Error:", err.message);
     }
-    const webAnswer = await tryWebAnswer(message);
-    if (webAnswer) return webAnswer;
-    return buildOfflineReply(message);
   }
 
-  const data = await response.json();
-  const content = data?.choices?.[0]?.message?.content;
-  if (!content) {
-    const webAnswer = await tryWebAnswer(message);
-    if (webAnswer) return webAnswer;
-    return buildOfflineReply(message);
-  }
-  return content;
+  // Smart Offline Fallback
+  const webAnswer = await tryWebAnswer(message);
+  if (webAnswer) return webAnswer;
+
+  return buildOfflineReply(message);
 }
-
