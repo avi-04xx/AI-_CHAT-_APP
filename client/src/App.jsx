@@ -4,7 +4,10 @@ import md5 from "blueimp-md5";
 const API_URL = "https://ai-chat-app-1x12.onrender.com";
 
 async function apiFetch(path, options) {
-  const res = await fetch(API_URL + path, { credentials: "include", ...options });
+  const res = await fetch(API_URL + path, { 
+    credentials: "include", 
+    ...options 
+  });
   const data = await res.json().catch(() => ({}));
   return { res, data };
 }
@@ -53,7 +56,7 @@ function AuthCard({ mode, setMode, onAuthed }) {
         <div className="auth-subtitle">Chat is available after login.</div>
 
         <form className="auth-form" onSubmit={submit}>
-          {mode === "register" ? (
+          {mode === "register" && (
             <input
               className="input"
               placeholder="Name"
@@ -61,7 +64,7 @@ function AuthCard({ mode, setMode, onAuthed }) {
               onChange={(e) => setName(e.target.value)}
               required
             />
-          ) : null}
+          )}
           <input
             className="input"
             placeholder="Email"
@@ -88,7 +91,7 @@ function AuthCard({ mode, setMode, onAuthed }) {
             Show password
           </label>
 
-          {error ? <div className="auth-error">{error}</div> : null}
+          {error && <div className="auth-error">{error}</div>}
 
           <button className="btn" disabled={loading}>
             {loading ? "Please wait…" : mode === "register" ? "Register" : "Login"}
@@ -148,7 +151,6 @@ export default function App() {
         if (res.ok && data?.user) setUser(data.user);
       } catch {}
     }
-
     loadMe();
   }, []);
 
@@ -167,7 +169,6 @@ export default function App() {
 
     setInput("");
     setLoading(true);
-
     setMessages((prev) => [...prev, { role: "user", content: text }]);
 
     try {
@@ -177,13 +178,13 @@ export default function App() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: text, history })
       });
-      if (!res.ok) throw new Error(data?.error || "Request failed");
 
+      if (!res.ok) throw new Error(data?.error || "Request failed");
       setMessages((prev) => [...prev, { role: "assistant", content: data.reply }]);
     } catch (err) {
       setMessages((prev) => [
         ...prev,
-        { role: "assistant", content: "Error: " + (err?.message || "Unknown error") }
+        { role: "assistant", content: "Error: " + (err?.message || "Cannot connect to server") }
       ]);
     } finally {
       setLoading(false);
@@ -215,108 +216,85 @@ export default function App() {
           <div className="subtitle">Ask anything and get instant answers.</div>
         </div>
         <div className="top-actions">
-          {user ? (
+          {user && (
             <>
               <div className="whoami" title={user.email}>
                 <img className="whoami-avatar" src={userAvatar} alt="Avatar" loading="lazy" />
                 <div className="whoami-text">{user.name}</div>
               </div>
-              <button
-                className="btn btn-secondary"
-                onClick={() => setMessages([])}
-                disabled={loading || messages.length === 0}
-                title="Clear local chat"
-              >
+              <button className="btn btn-secondary" onClick={() => setMessages([])} disabled={loading}>
                 Clear
               </button>
               <button className="btn btn-secondary" onClick={logout} disabled={loading}>
                 Logout
               </button>
             </>
-          ) : null}
+          )}
         </div>
       </header>
 
       {!user ? (
-        <AuthCard
-          mode={authMode}
-          setMode={setAuthMode}
-          onAuthed={(u) => {
-            setUser(u);
-            setMessages([]);
-          }}
-        />
+        <AuthCard mode={authMode} setMode={setAuthMode} onAuthed={(u) => { setUser(u); setMessages([]); }} />
       ) : (
         <main className="card">
-        <div className="chat-top">
-          <div className="chat-top-title">New Chat</div>
-          <div className="chat-top-subtitle">Fast, clean and focused responses</div>
-        </div>
-        <div className="messages" ref={listRef}>
-          {messages.length === 0 ? (
-            <>
-              <div className="empty">Type your question and press <b>Enter</b>.</div>
-              <div className="quick-grid">
-                {QUICK_PROMPTS.map((prompt) => (
-                  <button
-                    key={prompt}
-                    type="button"
-                    className="quick-chip"
-                    onClick={() => setInput(prompt)}
-                  >
-                    {prompt}
-                  </button>
-                ))}
-              </div>
-            </>
-          ) : (
-            messages.map((m, idx) => (
-              <Bubble
-                key={idx}
-                role={m.role}
-                content={m.content}
-                avatarUrl={m.role === "user" ? userAvatar : aiAvatar}
-              />
-            ))
-          )}
-          {loading ? (
-            <div className="row row-ai">
-              <div className="bubble-wrap bubble-wrap-ai">
-                <img className="avatar avatar-ai" src={aiAvatar} alt="AI avatar" loading="lazy" />
-                <div className="bubble bubble-ai">
-                  <div className="meta">AI</div>
-                  <div className="text">Thinking…</div>
+          <div className="chat-top">
+            <div className="chat-top-title">New Chat</div>
+            <div className="chat-top-subtitle">Fast, clean and focused responses</div>
+          </div>
+
+          <div className="messages" ref={listRef}>
+            {messages.length === 0 ? (
+              <>
+                <div className="empty">Type your question and press <b>Enter</b>.</div>
+                <div className="quick-grid">
+                  {QUICK_PROMPTS.map((prompt) => (
+                    <button key={prompt} className="quick-chip" onClick={() => setInput(prompt)}>
+                      {prompt}
+                    </button>
+                  ))}
+                </div>
+              </>
+            ) : (
+              messages.map((m, idx) => (
+                <Bubble
+                  key={idx}
+                  role={m.role}
+                  content={m.content}
+                  avatarUrl={m.role === "user" ? userAvatar : aiAvatar}
+                />
+              ))
+            )}
+            {loading && (
+              <div className="row row-ai">
+                <div className="bubble-wrap bubble-wrap-ai">
+                  <img className="avatar avatar-ai" src={aiAvatar} alt="AI avatar" loading="lazy" />
+                  <div className="bubble bubble-ai">
+                    <div className="meta">AI</div>
+                    <div className="text">Thinking…</div>
+                  </div>
                 </div>
               </div>
-            </div>
-          ) : null}
-        </div>
+            )}
+          </div>
 
-        <div className="composer">
-          <textarea
-            className="input"
-            placeholder="Write a message…"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={onKeyDown}
-            autoComplete="off"
-            autoCorrect="off"
-            autoCapitalize="off"
-            spellCheck={false}
-            rows={2}
-          />
-          <button className="btn" onClick={send} disabled={loading || !input.trim()}>
-            {loading ? "Sending..." : "Send"}
-          </button>
-        </div>
+          <div className="composer">
+            <textarea
+              className="input"
+              placeholder="Write a message…"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={onKeyDown}
+              rows={2}
+            />
+            <button className="btn" onClick={send} disabled={loading || !input.trim()}>
+              {loading ? "Sending..." : "Send"}
+            </button>
+          </div>
         </main>
       )}
 
       <footer className="footer">
-        API: <code>{API_URL}</code> • Health:{" "}
-        <a href={API_URL + "/api/health"} target="_blank" rel="noreferrer">
-          /api/health
-        </a>
+        Backend: <code>{API_URL}</code>
       </footer>
     </div>
   );
