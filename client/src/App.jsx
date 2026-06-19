@@ -6,9 +6,7 @@ const API_URL = "https://ai-chat-app-1x12.onrender.com";
 async function apiFetch(path, options = {}) {
   const res = await fetch(API_URL + path, {
     credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers: { "Content-Type": "application/json" },
     ...options,
   });
   const data = await res.json().catch(() => ({}));
@@ -59,37 +57,13 @@ function AuthCard({ mode, setMode, onAuthed }) {
 
         <form className="auth-form" onSubmit={submit}>
           {mode === "register" && (
-            <input
-              className="input"
-              placeholder="Name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-            />
+            <input className="input" placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} required />
           )}
-          <input
-            className="input"
-            placeholder="Email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-          <input
-            className="input"
-            placeholder="Password (min 6 chars)"
-            type={showPassword ? "text" : "password"}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            minLength={6}
-            required
-          />
+          <input className="input" placeholder="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+          <input className="input" placeholder="Password (min 6 chars)" type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} minLength={6} required />
+          
           <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13 }}>
-            <input
-              type="checkbox"
-              checked={showPassword}
-              onChange={(e) => setShowPassword(e.target.checked)}
-            />
+            <input type="checkbox" checked={showPassword} onChange={(e) => setShowPassword(e.target.checked)} />
             Show password
           </label>
 
@@ -102,12 +76,7 @@ function AuthCard({ mode, setMode, onAuthed }) {
 
         <div className="auth-switch">
           {mode === "register" ? "Already have an account?" : "New here?"}{" "}
-          <button
-            type="button"
-            className="linkbtn"
-            onClick={() => setMode(mode === "register" ? "login" : "register")}
-            disabled={loading}
-          >
+          <button type="button" className="linkbtn" onClick={() => setMode(mode === "register" ? "login" : "register")} disabled={loading}>
             {mode === "register" ? "Login" : "Create one"}
           </button>
         </div>
@@ -121,12 +90,7 @@ function Bubble({ role, content, avatarUrl }) {
   return (
     <div className={`row ${isUser ? "row-user" : "row-ai"}`}>
       <div className={`bubble-wrap ${isUser ? "bubble-wrap-user" : "bubble-wrap-ai"}`}>
-        <img
-          className={`avatar ${isUser ? "avatar-user" : "avatar-ai"}`}
-          src={avatarUrl}
-          alt={isUser ? "Your avatar" : "AI avatar"}
-          loading="lazy"
-        />
+        <img className={`avatar ${isUser ? "avatar-user" : "avatar-ai"}`} src={avatarUrl} alt="" loading="lazy" />
         <div className={`bubble ${isUser ? "bubble-user" : "bubble-ai"}`}>
           <div className="meta">{isUser ? "You" : "AI"}</div>
           <div className="text">{content}</div>
@@ -136,7 +100,7 @@ function Bubble({ role, content, avatarUrl }) {
   );
 }
 
-const QUICK_PROMPTS = ["What is JWT?", "Capital of India", "Explain MERN stack", "How does React useState work?"];
+const QUICK_PROMPTS = ["What is JWT?", "Capital of India", "Explain MERN stack"];
 
 export default function App() {
   const [user, setUser] = useState(null);
@@ -148,10 +112,8 @@ export default function App() {
 
   useEffect(() => {
     async function loadMe() {
-      try {
-        const { res, data } = await apiFetch("/api/auth/me");
-        if (res.ok && data?.user) setUser(data.user);
-      } catch (e) {}
+      const { res, data } = await apiFetch("/api/auth/me");
+      if (res.ok && data?.user) setUser(data.user);
     }
     loadMe();
   }, []);
@@ -170,7 +132,7 @@ export default function App() {
 
     setInput("");
     setLoading(true);
-    setMessages((prev) => [...prev, { role: "user", content: text }]);
+    setMessages(prev => [...prev, { role: "user", content: text }]);
 
     try {
       const { res, data } = await apiFetch("/api/chat", {
@@ -178,13 +140,10 @@ export default function App() {
         body: JSON.stringify({ message: text, history: messages }),
       });
 
-      if (!res.ok) throw new Error(data?.error || "Failed to get response");
-      setMessages((prev) => [...prev, { role: "assistant", content: data.reply }]);
+      if (!res.ok) throw new Error(data?.error || "Failed");
+      setMessages(prev => [...prev, { role: "assistant", content: data.reply }]);
     } catch (err) {
-      setMessages((prev) => [
-        ...prev,
-        { role: "assistant", content: "Error: " + (err.message || "Cannot connect to server") }
-      ]);
+      setMessages(prev => [...prev, { role: "assistant", content: "Error: Cannot connect to server" }]);
     } finally {
       setLoading(false);
     }
@@ -198,10 +157,9 @@ export default function App() {
   }
 
   async function logout() {
-    await apiFetch("/api/auth/logout", { method: "POST" }).catch(() => {});
+    await apiFetch("/api/auth/logout", { method: "POST" });
     setUser(null);
     setMessages([]);
-    setAuthMode("login");
   }
 
   const userAvatar = user?.email ? gravatarUrl(user.email) : "";
@@ -217,7 +175,7 @@ export default function App() {
         {user && (
           <div className="top-actions">
             <div className="whoami" title={user.email}>
-              <img className="whoami-avatar" src={userAvatar} alt="Avatar" />
+              <img className="whoami-avatar" src={userAvatar} alt="" />
               <div className="whoami-text">{user.name}</div>
             </div>
             <button className="btn btn-secondary" onClick={() => setMessages([])}>Clear</button>
@@ -240,55 +198,25 @@ export default function App() {
               <>
                 <div className="empty">Type your question and press <b>Enter</b>.</div>
                 <div className="quick-grid">
-                  {QUICK_PROMPTS.map((p) => (
-                    <button key={p} className="quick-chip" onClick={() => setInput(p)}>
-                      {p}
-                    </button>
+                  {QUICK_PROMPTS.map(p => (
+                    <button key={p} className="quick-chip" onClick={() => setInput(p)}>{p}</button>
                   ))}
                 </div>
               </>
             ) : (
-              messages.map((m, i) => (
-                <Bubble
-                  key={i}
-                  role={m.role}
-                  content={m.content}
-                  avatarUrl={m.role === "user" ? userAvatar : aiAvatar}
-                />
-              ))
+              messages.map((m, i) => <Bubble key={i} role={m.role} content={m.content} avatarUrl={m.role === "user" ? userAvatar : aiAvatar} />)
             )}
-            {loading && (
-              <div className="row row-ai">
-                <div className="bubble-wrap bubble-wrap-ai">
-                  <img className="avatar avatar-ai" src={aiAvatar} alt="AI" />
-                  <div className="bubble bubble-ai">
-                    <div className="meta">AI</div>
-                    <div className="text">Thinking…</div>
-                  </div>
-                </div>
-              </div>
-            )}
+            {loading && <div className="row row-ai"><div className="bubble-wrap bubble-wrap-ai"><img className="avatar avatar-ai" src={aiAvatar} alt="" /><div className="bubble bubble-ai"><div className="meta">AI</div><div className="text">Thinking…</div></div></div></div>}
           </div>
 
           <div className="composer">
-            <textarea
-              className="input"
-              placeholder="Write a message…"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={onKeyDown}
-              rows={2}
-            />
-            <button className="btn" onClick={send} disabled={loading || !input.trim()}>
-              {loading ? "Sending..." : "Send"}
-            </button>
+            <textarea className="input" placeholder="Write a message…" value={input} onChange={e => setInput(e.target.value)} onKeyDown={onKeyDown} rows={2} />
+            <button className="btn" onClick={send} disabled={loading || !input.trim()}>Send</button>
           </div>
         </main>
       )}
 
-      <footer className="footer">
-        Backend: <code>{API_URL}</code>
-      </footer>
+      <footer className="footer">Backend: <code>{API_URL}</code></footer>
     </div>
   );
 }
