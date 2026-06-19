@@ -3,8 +3,7 @@ import jwt from "jsonwebtoken";
 const COOKIE_NAME = "token";
 
 function getJwtSecret() {
-  // Keep it simple for beginners: require a secret in prod, allow fallback in dev.
-  return process.env.JWT_SECRET || "dev-secret-change-me";
+  return process.env.JWT_SECRET || "dev-secret-change-me-now-please";
 }
 
 export function signToken(payload) {
@@ -12,11 +11,11 @@ export function signToken(payload) {
 }
 
 export function setAuthCookie(res, token) {
-  const isProd = process.env.NODE_ENV === "production";
+  const isProd = true; // Force production settings
   res.cookie(COOKIE_NAME, token, {
     httpOnly: true,
-    sameSite: "lax",
-    secure: isProd,
+    secure: true,
+    sameSite: "none",
     maxAge: 30 * 24 * 60 * 60 * 1000
   });
 }
@@ -31,10 +30,9 @@ export function requireAuth(req, res, next) {
     if (!token) return res.status(401).json({ error: "Not logged in" });
 
     const decoded = jwt.verify(token, getJwtSecret());
-    req.user = decoded; // { userId, email, name }
+    req.user = decoded;
     return next();
   } catch {
     return res.status(401).json({ error: "Invalid session" });
   }
 }
-

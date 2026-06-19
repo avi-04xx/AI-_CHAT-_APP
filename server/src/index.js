@@ -8,12 +8,21 @@ import { chatRouter } from "./routes/chat.js";
 
 const app = express();
 
+// FIXED CORS FOR VERCEL + RENDER
 app.use(
   cors({
-    origin: true,
-    credentials: true
+    origin: [
+      "https://ai-chat-app-client-4knylzexn-avi-04xxs-projects.vercel.app",
+      "https://ai-chat-app.vercel.app",
+      "http://localhost:5173",
+      "http://localhost:5174"
+    ],
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"]
   })
 );
+
 app.use(cookieParser());
 app.use(express.json({ limit: "1mb" }));
 
@@ -28,16 +37,9 @@ await connectDb();
 
 const port = Number(process.env.PORT || 5000);
 const server = app.listen(port, () => {
-  console.log(`Server running on http://localhost:${port}`);
+  console.log(`Server running on port ${port}`);
 });
 
 server.on("error", (err) => {
-  if (err?.code === "EADDRINUSE") {
-    console.error(`Port ${port} is already in use. Stop the other process, then restart.`);
-    process.exitCode = 1;
-    return;
-  }
-  console.error("Server failed to start:", err?.message || err);
-  process.exitCode = 1;
+  console.error("Server error:", err);
 });
-
