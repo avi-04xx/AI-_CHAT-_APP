@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import md5 from "blueimp-md5";
 
-const API_URL = (import.meta.env.VITE_API_URL || "http://localhost:5000").replace(/\/+$/, "");
+const API_URL = "https://ai-chat-app-1x12.onrender.com";
 
 async function apiFetch(path, options) {
   const res = await fetch(API_URL + path, { credentials: "include", ...options });
@@ -124,7 +124,7 @@ function Bubble({ role, content, avatarUrl }) {
         />
         <div className={"bubble " + (isUser ? "bubble-user" : "bubble-ai")}>
           <div className="meta">{isUser ? "You" : "AI"}</div>
-        <div className="text">{content}</div>
+          <div className="text">{content}</div>
         </div>
       </div>
     </div>
@@ -153,7 +153,6 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    // Start with a fresh chat each login session.
     if (user) setMessages([]);
   }, [user]);
 
@@ -322,4 +321,3 @@ export default function App() {
     </div>
   );
 }
-
