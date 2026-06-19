@@ -8,14 +8,15 @@ import { chatRouter } from "./routes/chat.js";
 
 const app = express();
 
-// FIXED CORS FOR VERCEL + RENDER
+// FIXED CORS FOR VERCEL FRONTEND
 app.use(
   cors({
     origin: [
       "https://ai-chat-app-client-4knylzexn-avi-04xxs-projects.vercel.app",
       "https://ai-chat-app.vercel.app",
       "http://localhost:5173",
-      "http://localhost:5174"
+      "http://localhost:5174",
+      "http://localhost:3000"
     ],
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
@@ -27,7 +28,7 @@ app.use(cookieParser());
 app.use(express.json({ limit: "1mb" }));
 
 app.get("/api/health", (_req, res) => {
-  res.json({ ok: true });
+  res.json({ ok: true, message: "Backend is working" });
 });
 
 app.use("/api/auth", authRouter);
@@ -37,7 +38,7 @@ await connectDb();
 
 const port = Number(process.env.PORT || 5000);
 const server = app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
+  console.log(`✅ Server running on port ${port}`);
 });
 
 server.on("error", (err) => {

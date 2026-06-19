@@ -3,7 +3,7 @@ import jwt from "jsonwebtoken";
 const COOKIE_NAME = "token";
 
 function getJwtSecret() {
-  return process.env.JWT_SECRET || "dev-secret-change-me-now-please";
+  return process.env.JWT_SECRET || "super-secret-change-this-in-production-2026";
 }
 
 export function signToken(payload) {
@@ -11,7 +11,6 @@ export function signToken(payload) {
 }
 
 export function setAuthCookie(res, token) {
-  const isProd = true; // Force production settings
   res.cookie(COOKIE_NAME, token, {
     httpOnly: true,
     secure: true,
@@ -27,12 +26,14 @@ export function clearAuthCookie(res) {
 export function requireAuth(req, res, next) {
   try {
     const token = req.cookies?.[COOKIE_NAME];
-    if (!token) return res.status(401).json({ error: "Not logged in" });
+    if (!token) {
+      return res.status(401).json({ error: "Not logged in" });
+    }
 
     const decoded = jwt.verify(token, getJwtSecret());
     req.user = decoded;
     return next();
-  } catch {
+  } catch (err) {
     return res.status(401).json({ error: "Invalid session" });
   }
 }
